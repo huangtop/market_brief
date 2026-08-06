@@ -116,7 +116,7 @@ def validate_html(content: str) -> None:
     if any(phrase in content for phrase in FORBIDDEN_PHRASES):
         raise RuntimeError(
             "Model returned a confirmation-style response instead of the report. "
-            "Run again, or switch OPENAI_MODEL to gpt-5."
+            "Run again, or switch OPENAI_MODEL to gpt-5-mini."
         )
     if "```" in content:
         raise RuntimeError("Generated HTML still contains code fences.")
@@ -139,24 +139,44 @@ def offline_sample_html() -> str:
     <h2>每日市場早報｜本機測試樣板</h2>
     <p class="mb-updated">更新時間：本機測試｜{now.strftime('%Y/%m/%d %H:%M')} 台北時間</p>
   </header>
+
   <section class="mb-section">
-    <h3>台股</h3>
-    <p>這是離線測試內容，用來確認 WordPress shortcode 與 CSS 顯示正常。</p>
+    <h3>台股漲跌原因</h3>
+    <p>台股漲跌原因：這是離線測試內容。正式版只會整理台股漲跌背後的原因，例如美股科技股影響、外資與融資動向、AI/半導體族群、台積電與電子權值股、匯率或總經因素，不會列出指數點位、漲跌點數或漲跌幅。</p>
   </section>
+
   <section class="mb-section">
-    <h3>台指期</h3>
-    <p>本段為測試資料。</p>
+    <h3>台指期漲跌原因</h3>
+    <p>台指期漲跌原因：本段為測試資料。正式版會整理台指期與現貨、美股期貨、半導體股、外資期貨部位及夜盤情緒的連動原因，不會列出期貨點位或漲跌點數。</p>
   </section>
+
   <section class="mb-section">
-    <h3>美股</h3>
-    <table class="mb-table">
-      <thead><tr><th>指數</th><th>收盤</th><th>漲跌點數</th><th>漲跌幅</th></tr></thead>
-      <tbody><tr><td>Nasdaq</td><td>測試</td><td>測試</td><td>測試</td></tr></tbody>
-    </table>
+    <h3>美股漲跌原因</h3>
+    <p>美股漲跌原因：這是測試段落。正式版會用一段文字整理市場分化、財報、AI 投資、利率、油價與風險偏好變化，不會列出 Dow Jones、S&amp;P 500、Nasdaq 的點位與漲跌點數。 <a href="https://apnews.com/" target="_blank" rel="noopener noreferrer">AP</a></p>
   </section>
+
+  <section class="mb-section">
+    <h3>高盛／大摩／SemiAnalysis</h3>
+    <ul>
+      <li>高盛：測試清單項目。</li>
+      <li>大摩：測試清單項目。</li>
+      <li>SemiAnalysis：測試清單項目。</li>
+    </ul>
+  </section>
+
   <section class="mb-section">
     <h3>Yahoo 財經 AI 重點新聞</h3>
-    <ul><li>測試清單項目。</li></ul>
+    <ul>
+      <li>測試清單項目。正式版會整理 Yahoo Finance / Yahoo 財經 AI 相關新聞與市場影響。</li>
+    </ul>
+  </section>
+
+  <section class="mb-section">
+    <h3>今日觀察重點</h3>
+    <ul>
+      <li>測試觀察重點。</li>
+      <li>確認版面、連結、行距與手機顯示正常。</li>
+    </ul>
   </section>
 </article>'''
 
@@ -164,6 +184,7 @@ def offline_sample_html() -> str:
 def build_prompt() -> str:
     now = taipei_now()
     yesterday = now - dt.timedelta(days=1)
+
     return f"""
 你是無人值守的每日財經早報產生器。這是排程任務，不是對話。
 
@@ -179,20 +200,27 @@ def build_prompt() -> str:
 - 不准輸出 ```html 或任何 code fence。
 - 必須直接輸出可嵌入 WordPress 的 HTML。
 - HTML 最外層必須是 <article class="mb-brief">。
-- 如果某項資料查不到，請寫「未取得可靠公開數據」，不要杜撰。
-- 不提供投資建議。
-- 連結必須使用 <a href="..." target="_blank" rel="noopener noreferrer">來源名稱</a>。
-- 不准輸出像 ([來源](https://...)) 的 Markdown 連結。
 - 不要輸出 <html>、<head>、<body>。
 - 使用繁體中文。
+- 不提供投資建議。
+- 不要列出台股加權指數的收盤點位、漲跌點數、漲跌幅。
+- 不要列出台指期的收盤點位、漲跌點數、漲跌幅。
+- 不要列出美股三大指數的收盤點位、漲跌點數、漲跌幅。
+- 不要使用表格。
+- 重點只整理「漲跌原因、資金情緒、AI 與半導體主線、重要機構與新聞觀點」。
+- 如果某項資料查不到，請寫「未取得可靠公開資訊」，不要杜撰。
+- 每段最多 2 到 4 句，避免冗長。
+- 連結必須使用 <a href="..." target="_blank" rel="noopener noreferrer">來源名稱</a>。
+- 不准輸出像 ([來源](https://...)) 的 Markdown 連結。
+- 來源連結請放在相關段落最後，不要另外做來源清單。
 
 請整理：
-1. 台股加權指數：收盤點位、漲跌點數、漲跌幅、漲跌原因。
-2. 台指期：日盤或夜盤收盤點位、漲跌點數、漲跌幅、漲跌原因。
-3. 美股三大指數：Dow Jones、S&P 500、Nasdaq 的收盤點位、漲跌點數、漲跌幅、漲跌原因。
-4. 如果有 Goldman Sachs / 高盛、Morgan Stanley / 大摩、SemiAnalysis 相關 AI、半導體、GPU、HBM、資料中心、總經或市場新聞，請整理；若沒有新消息，明確寫沒有重大新消息。
-5. 彙整 Yahoo Finance / Yahoo 財經上的相關 AI 重點新聞。
-6. 最後列出今日觀察重點。
+1. 台股漲跌原因：只寫原因，不寫指數點位、漲跌點數、漲跌幅。
+2. 台指期漲跌原因：只寫原因，不寫期貨點位、漲跌點數、漲跌幅。
+3. 美股漲跌原因：只寫原因，不寫 Dow Jones、S&P 500、Nasdaq 的點位、漲跌點數、漲跌幅。
+4. 高盛／大摩／SemiAnalysis：如果有 Goldman Sachs / 高盛、Morgan Stanley / 大摩、SemiAnalysis 相關 AI、半導體、GPU、HBM、資料中心、總經或市場新聞，請整理；若沒有新消息，明確寫沒有重大新消息。
+5. Yahoo 財經 AI 重點新聞：彙整 Yahoo Finance / Yahoo 財經上的 AI 重點新聞，只寫重點與影響。
+6. 今日觀察重點：列出 3 到 5 點。
 
 請依照此固定 HTML 結構輸出，但內容請用你查到的最新資料替換：
 
@@ -204,50 +232,40 @@ def build_prompt() -> str:
   </header>
 
   <section class="mb-section">
-    <h3>台股</h3>
-    <p>加權指數收盤點位、漲跌點數、漲跌幅與原因。</p>
+    <h3>台股漲跌原因</h3>
+    <p>台股漲跌原因：請用一段文字整理台股昨日漲跌原因，不要列出任何指數點位、漲跌點數或漲跌幅。請聚焦美股影響、外資與融資動向、AI/半導體族群、台積電與電子權值股、匯率或總經因素。</p>
   </section>
 
   <section class="mb-section">
-    <h3>台指期</h3>
-    <p>台指期收盤點位、漲跌點數、漲跌幅與原因。</p>
+    <h3>台指期漲跌原因</h3>
+    <p>台指期漲跌原因：請用一段文字整理台指期昨日漲跌原因，不要列出任何期貨點位、漲跌點數或漲跌幅。請聚焦現貨連動、美股期貨、半導體股、外資期貨部位與夜盤情緒。</p>
   </section>
 
   <section class="mb-section">
-    <h3>美股</h3>
-    <table class="mb-table">
-      <thead>
-        <tr><th>指數</th><th>收盤</th><th>漲跌點數</th><th>漲跌幅</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Dow Jones</td><td></td><td></td><td></td></tr>
-        <tr><td>S&amp;P 500</td><td></td><td></td><td></td></tr>
-        <tr><td>Nasdaq</td><td></td><td></td><td></td></tr>
-      </tbody>
-    </table>
-    <p>美股漲跌原因。</p>
+    <h3>美股漲跌原因</h3>
+    <p>美股漲跌原因：請用一段文字整理美股昨日漲跌原因，不要列出 Dow Jones、S&amp;P 500、Nasdaq 的點位、漲跌點數或漲跌幅。請聚焦財報、AI 投資、利率、油價、地緣政治與市場風險偏好。</p>
   </section>
 
   <section class="mb-section">
     <h3>高盛／大摩／SemiAnalysis</h3>
     <ul>
-      <li>高盛相關整理。</li>
-      <li>大摩相關整理。</li>
-      <li>SemiAnalysis 相關整理。</li>
+      <li>高盛：整理 Goldman Sachs / 高盛相關 AI、半導體、總經或市場觀點；若沒有新消息，請寫沒有重大新消息。</li>
+      <li>大摩：整理 Morgan Stanley / 大摩相關 AI、半導體、總經或市場觀點；若沒有新消息，請寫沒有重大新消息。</li>
+      <li>SemiAnalysis：整理 SemiAnalysis 相關 AI、GPU、HBM、資料中心或供應鏈觀點；若沒有新消息，請寫沒有重大新消息。</li>
     </ul>
   </section>
 
   <section class="mb-section">
     <h3>Yahoo 財經 AI 重點新聞</h3>
     <ul>
-      <li>Yahoo Finance / Yahoo 財經 AI 重點新聞。</li>
+      <li>整理 Yahoo Finance / Yahoo 財經 AI 重點新聞與市場影響。</li>
     </ul>
   </section>
 
   <section class="mb-section">
     <h3>今日觀察重點</h3>
     <ul>
-      <li>今日需要觀察的市場重點。</li>
+      <li>列出今日需要觀察的市場重點。</li>
     </ul>
   </section>
 </article>
@@ -301,20 +319,27 @@ def generate_with_openai(model: str) -> str:
     return post_process(response.output_text)
 
 
-def write_outputs(content: str) -> None:
-    DATA_DIR.mkdir(exist_ok=True)
+def write_outputs(content: str) -> tuple[Path, Path]:
+    """
+    Always write BOTH:
+    1. data/latest.html
+    2. data/archive/YYYY-MM-DD.html
+    """
+    now = taipei_now()
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
-    today = taipei_now().date().isoformat()
-    archive_path = ARCHIVE_DIR / f"{today}.html"
+    archive_path = ARCHIVE_DIR / f"{now.strftime('%Y-%m-%d')}.html"
+    clean_content = content.strip() + "\n"
 
-    LATEST_PATH.write_text(content, encoding="utf-8")
-    archive_path.write_text(content, encoding="utf-8")
+    LATEST_PATH.write_text(clean_content, encoding="utf-8")
+    archive_path.write_text(clean_content, encoding="utf-8")
 
-    print(f"Wrote: {LATEST_PATH}")
-    print(f"Wrote: {archive_path}")
-    print("\n--- HTML preview ---\n")
-    print(content[:2500])
+    print(f"Wrote latest:  {LATEST_PATH}")
+    print(f"Wrote archive: {archive_path}")
+
+    return LATEST_PATH, archive_path
 
 
 def main() -> int:

@@ -29,7 +29,7 @@ jobs:
       - name: Generate latest market brief
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-mini' }}
         run: python generate_brief.py
 
       - name: Commit generated HTML

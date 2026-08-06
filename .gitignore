@@ -27,6 +27,8 @@ build/
 # Do not commit markdown or general text docs
 *.md
 *.txt
+*.php
+*.css
 
 # Keep dependency file required by GitHub Actions
 !requirements.txt

@@ -1,0 +1,87 @@
+.market-brief-box {
+  max-width: 960px;
+  margin: 0 auto 48px;
+  padding: 28px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  line-height: 1.75;
+}
+
+.market-brief-box .mb-header {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.market-brief-box .mb-kicker {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #2563eb;
+}
+
+.market-brief-box h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.3;
+}
+
+.market-brief-box .mb-updated {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.market-brief-box h3 {
+  margin-top: 28px;
+  padding-left: 12px;
+  border-left: 4px solid #2563eb;
+  font-size: 21px;
+}
+
+.market-brief-box p {
+  margin: 10px 0;
+}
+
+.market-brief-box ul,
+.market-brief-box ol {
+  padding-left: 1.4em;
+}
+
+.market-brief-box li {
+  margin: 7px 0;
+}
+
+.market-brief-box a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.market-brief-box table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+}
+
+.market-brief-box th,
+.market-brief-box td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.market-brief-box th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.market-brief-error {
+  padding: 16px;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+}

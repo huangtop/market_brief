@@ -1,0 +1,41 @@
+name: Generate Daily Market Brief
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC.
+    # Asia/Taipei 05:10 = UTC 21:10 on the previous day.
+    - cron: "10 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate latest market brief
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5' }}
+        run: python generate_brief.py
+
+      - name: Commit generated HTML
+        run: |
+          git config user.name "market-brief-bot"
+          git config user.email "market-brief-bot@users.noreply.github.com"
+          git add data/latest.html data/archive/*.html
+          git commit -m "Update daily market brief" || echo "No changes to commit"
+          git push

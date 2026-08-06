@@ -1,0 +1,36 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Frontend/build artifacts you do not want committed
+frontend/
+node_modules/
+dist/
+build/
+.cache/
+
+# Do not commit markdown or general text docs
+*.md
+*.txt
+
+# Keep dependency file required by GitHub Actions
+!requirements.txt
+
+# Generated logs/temp
+*.log
+*.tmp

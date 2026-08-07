@@ -120,6 +120,10 @@ def validate_html(content: str) -> None:
         )
     if "```" in content:
         raise RuntimeError("Generated HTML still contains code fences.")
+    required_sections = ["隔夜市場速覽", "本日重點財經事項", "今日觀察"]
+    missing = [section for section in required_sections if section not in content]
+    if missing:
+        raise RuntimeError(f"Generated HTML is missing required sections: {', '.join(missing)}")
 
 
 def post_process(content: str) -> str:
@@ -139,42 +143,27 @@ def offline_sample_html() -> str:
     <h2>每日市場早報｜本機測試樣板</h2>
     <p class="mb-updated">更新時間：本機測試｜{now.strftime('%Y/%m/%d %H:%M')} 台北時間</p>
   </header>
-
-  <section class="mb-section">
-    <h3>台股漲跌原因</h3>
-    <p>台股漲跌原因：這是離線測試內容。正式版只會整理台股漲跌背後的原因，例如美股科技股影響、外資與融資動向、AI/半導體族群、台積電與電子權值股、匯率或總經因素，不會列出指數點位、漲跌點數或漲跌幅。</p>
-  </section>
-
-  <section class="mb-section">
-    <h3>台指期漲跌原因</h3>
-    <p>台指期漲跌原因：本段為測試資料。正式版會整理台指期與現貨、美股期貨、半導體股、外資期貨部位及夜盤情緒的連動原因，不會列出期貨點位或漲跌點數。</p>
-  </section>
-
-  <section class="mb-section">
-    <h3>美股漲跌原因</h3>
-    <p>美股漲跌原因：這是測試段落。正式版會用一段文字整理市場分化、財報、AI 投資、利率、油價與風險偏好變化，不會列出 Dow Jones、S&amp;P 500、Nasdaq 的點位與漲跌點數。 <a href="https://apnews.com/" target="_blank" rel="noopener noreferrer">AP</a></p>
-  </section>
-
-  <section class="mb-section">
-    <h3>高盛／大摩／SemiAnalysis</h3>
+  <section class="mb-section mb-overnight">
+    <h3>隔夜市場速覽</h3>
     <ul>
-      <li>高盛：測試清單項目。</li>
-      <li>大摩：測試清單項目。</li>
-      <li>SemiAnalysis：測試清單項目。</li>
+      <li><strong>美股：</strong>四大指數漲跌互見，費半相對抗跌。</li>
+      <li><strong>ADR／亞洲科技：</strong>台積電 ADR 上漲，記憶體族群承壓。</li>
+      <li><strong>台指夜盤：</strong>電子權值支撐，夜盤偏多震盪。</li>
+      <li><strong>商品／利率：</strong>銅價走強，市場關注債券殖利率變化。</li>
     </ul>
   </section>
-
-  <section class="mb-section">
-    <h3>Yahoo 財經 AI 重點新聞</h3>
-    <ul>
-      <li>測試清單項目。正式版會整理 Yahoo Finance / Yahoo 財經 AI 相關新聞與市場影響。</li>
-    </ul>
+  <section class="mb-section mb-events">
+    <h3>本日重點財經事項</h3>
+    <ol>
+      <li><strong>★★★★★ 測試重大事件</strong><p>一句話交代具體事件、數字與市場意義。</p><p><strong>影響：</strong>列出受影響產業、公司與今日觀察點。</p></li>
+      <li><strong>★★★★☆ 測試次重要事件</strong><p>只保留具體、可驗證且可能影響市場定價的資訊。</p><p><strong>影響：</strong>說明產業鏈與相關股票。</p></li>
+    </ol>
   </section>
-
-  <section class="mb-section">
-    <h3>今日觀察重點</h3>
+  <section class="mb-section mb-watchlist">
+    <h3>今日觀察</h3>
     <ul>
-      <li>測試觀察重點。</li>
+      <li>觀察事件是否延伸至相關台股供應鏈。</li>
+      <li>追蹤盤前價格、公司公告與政策細節。</li>
       <li>確認版面、連結、行距與手機顯示正常。</li>
     </ul>
   </section>
@@ -183,46 +172,64 @@ def offline_sample_html() -> str:
 
 def build_prompt() -> str:
     now = taipei_now()
-    yesterday = now - dt.timedelta(days=1)
+    window_start = now - dt.timedelta(hours=30)
 
     return f"""
-你是無人值守的每日財經早報產生器。這是排程任務，不是對話。
+你是科技基金晨會的資深市場編輯。這是無人值守排程，不是對話。
 
-今天台北時間：{now.strftime('%Y/%m/%d %H:%M')}
-請整理「昨天」：{yesterday.strftime('%Y/%m/%d')} 的市場資料。
+現在台北時間：{now.strftime('%Y/%m/%d %H:%M')}
+主要搜尋區間：{window_start.strftime('%Y/%m/%d %H:%M')} 至 {now.strftime('%Y/%m/%d %H:%M')}（台北時間）。
+若事件發生較早、但在此區間出現重大新進展，也可納入，並明確寫出新進展。
 
-絕對規則：
-- 不准問問題。
-- 不准請使用者確認。
-- 不准說「我準備開始」、「請確認是否要我現在開始」、「我可以幫你」。
-- 不准輸出流程說明。
-- 不准輸出 Markdown。
-- 不准輸出 ```html 或任何 code fence。
-- 必須直接輸出可嵌入 WordPress 的 HTML。
-- HTML 最外層必須是 <article class="mb-brief">。
-- 不要輸出 <html>、<head>、<body>。
-- 使用繁體中文。
-- 不提供投資建議。
-- 不要列出台股加權指數的收盤點位、漲跌點數、漲跌幅。
-- 不要列出台指期的收盤點位、漲跌點數、漲跌幅。
-- 不要列出美股三大指數的收盤點位、漲跌點數、漲跌幅。
+你的任務不是寫市場作文，而是回答：
+1. 隔夜市場發生了什麼？
+2. 今天有哪些「具體事件」可能影響美股、台股、AI、半導體或重要產業定價？
+3. 今天交易時段需要追蹤什麼？
+
+【事件的定義】
+合格事件必須至少包含一個可核實的主體與動作，例如：公司發布產品、併購、IPO 定價、增發債券、關稅或法規生效、財測修正、供應鏈規格改變、ETF 上市、商品價格突破、重大資本支出或重要財報。
+「市場觀望」「投資人等待」「風險偏好改變」「漲跌互見」不是事件，不能單獨列入重點事項。
+
+【選題優先順序】
+- AI、GPU、ASIC、HBM、記憶體、光通訊、資料中心、半導體設備與先進封裝。
+- 美國、中國、台灣的關稅、出口管制、產業政策與監管變化。
+- 大型科技公司、重要供應鏈公司的併購、融資、財測、產品規格與資本支出。
+- 重大 IPO、ETF 上市、公司債發行、資金流向與商品價格突破。
+- 對台積電及台灣科技供應鏈可能有直接影響的海外公司消息。
+
+【重要性評分】
+★★★★★：可能影響整個市場、產業鏈或大型權值股定價。
+★★★★☆：可能明顯影響特定產業或多家相關公司。
+★★★☆☆：值得今日追蹤，但影響較集中或仍待確認。
+低於三星不要寫。最多 10 則；真正重要事件不足時可以少於 10 則，禁止湊數。
+
+【搜尋與查證】
+- 必須主動搜尋多個可信來源，不得只依賴單一入口或只看 Yahoo Finance。
+- 優先採用公司公告、監管機構、交易所、政府文件與具編採責任的財經媒體。
+- 每則事件至少要有一個可點擊來源；重大或有爭議事件應盡量交叉查證。
+- 若標題中的關鍵數字、交易金額、關稅稅率、定價或漲跌幅無法可靠確認，就不要寫入。
+- 嚴禁把傳聞寫成已確定事實；傳聞必須標示「據報」「傳出」或「消息人士稱」。
+
+【寫作規則】
+- 使用繁體中文，句子短，資訊密度高。
+- 先寫具體事實，再寫市場影響；不要用空泛評論填充。
+- 每則事件標題必須包含公司、機構、商品或政策名稱，不可只寫「AI 需求升溫」這類抽象標題。
+- 每則事件需盡量保留關鍵數字，例如價格、金額、稅率、估值、漲跌幅或時間。
+- 「影響」需點出相關產業，以及有明確關聯的美股、ADR 或台股公司；不可硬湊股票。
+- 不提供買賣建議，不預測必然上漲或下跌。
+- 不要另外設置高盛、大摩、SemiAnalysis 或 Yahoo 專區；只有其內容本身夠重要時才列為事件。
+
+【禁止用語】
+除非後面立刻接具體事實，否則不要使用：「市場觀望」「投資人等待」「漲跌互見」「受到多重因素影響」「風險偏好」「市場情緒」「仍須觀察」「整體而言」「未來可能」「分析師認為」。
+
+【HTML 絕對規則】
+- 直接輸出可嵌入 WordPress 的 HTML，不准輸出 Markdown、code fence、流程說明或對話內容。
+- 最外層必須是 <article class="mb-brief">；不要輸出 <html>、<head>、<body>。
 - 不要使用表格。
-- 重點只整理「漲跌原因、資金情緒、AI 與半導體主線、重要機構與新聞觀點」。
-- 如果某項資料查不到，請寫「未取得可靠公開資訊」，不要杜撰。
-- 每段最多 2 到 4 句，避免冗長。
-- 連結必須使用 <a href="..." target="_blank" rel="noopener noreferrer">來源名稱</a>。
-- 不准輸出像 ([來源](https://...)) 的 Markdown 連結。
-- 來源連結請放在相關段落最後，不要另外做來源清單。
+- 連結格式只能是 <a href="..." target="_blank" rel="noopener noreferrer">來源名稱</a>。
+- 來源放在相關項目末尾，不要另做來源清單。
 
-請整理：
-1. 台股漲跌原因：只寫原因，不寫指數點位、漲跌點數、漲跌幅。
-2. 台指期漲跌原因：只寫原因，不寫期貨點位、漲跌點數、漲跌幅。
-3. 美股漲跌原因：只寫原因，不寫 Dow Jones、S&P 500、Nasdaq 的點位、漲跌點數、漲跌幅。
-4. 高盛／大摩／SemiAnalysis：如果有 Goldman Sachs / 高盛、Morgan Stanley / 大摩、SemiAnalysis 相關 AI、半導體、GPU、HBM、資料中心、總經或市場新聞，請整理；若沒有新消息，明確寫沒有重大新消息。
-5. Yahoo 財經 AI 重點新聞：彙整 Yahoo Finance / Yahoo 財經上的 AI 重點新聞，只寫重點與影響。
-6. 今日觀察重點：列出 3 到 5 點。
-
-請依照此固定 HTML 結構輸出，但內容請用你查到的最新資料替換：
+請嚴格使用以下結構：
 
 <article class="mb-brief">
   <header class="mb-header">
@@ -230,54 +237,46 @@ def build_prompt() -> str:
     <h2>每日市場早報｜{now.strftime('%Y/%m/%d')}</h2>
     <p class="mb-updated">更新時間：{now.strftime('%Y/%m/%d %H:%M')} 台北時間</p>
   </header>
-
-  <section class="mb-section">
-    <h3>台股漲跌原因</h3>
-    <p>台股漲跌原因：請用一段文字整理台股昨日漲跌原因，不要列出任何指數點位、漲跌點數或漲跌幅。請聚焦美股影響、外資與融資動向、AI/半導體族群、台積電與電子權值股、匯率或總經因素。</p>
-  </section>
-
-  <section class="mb-section">
-    <h3>台指期漲跌原因</h3>
-    <p>台指期漲跌原因：請用一段文字整理台指期昨日漲跌原因，不要列出任何期貨點位、漲跌點數或漲跌幅。請聚焦現貨連動、美股期貨、半導體股、外資期貨部位與夜盤情緒。</p>
-  </section>
-
-  <section class="mb-section">
-    <h3>美股漲跌原因</h3>
-    <p>美股漲跌原因：請用一段文字整理美股昨日漲跌原因，不要列出 Dow Jones、S&amp;P 500、Nasdaq 的點位、漲跌點數或漲跌幅。請聚焦財報、AI 投資、利率、油價、地緣政治與市場風險偏好。</p>
-  </section>
-
-  <section class="mb-section">
-    <h3>高盛／大摩／SemiAnalysis</h3>
+  <section class="mb-section mb-overnight">
+    <h3>隔夜市場速覽</h3>
     <ul>
-      <li>高盛：整理 Goldman Sachs / 高盛相關 AI、半導體、總經或市場觀點；若沒有新消息，請寫沒有重大新消息。</li>
-      <li>大摩：整理 Morgan Stanley / 大摩相關 AI、半導體、總經或市場觀點；若沒有新消息，請寫沒有重大新消息。</li>
-      <li>SemiAnalysis：整理 SemiAnalysis 相關 AI、GPU、HBM、資料中心或供應鏈觀點；若沒有新消息，請寫沒有重大新消息。</li>
+      <li><strong>美股：</strong>用一句話列出道瓊、標普 500、那斯達克、費半的方向與必要漲跌幅，並點出最直接原因。</li>
+      <li><strong>ADR／亞洲科技：</strong>優先列出台積電 ADR、重要半導體或記憶體公司具體表現；沒有顯著變化可省略個股。</li>
+      <li><strong>台指夜盤：</strong>列出夜盤方向與漲跌幅，並用短句說明主要連動因素。</li>
+      <li><strong>商品／利率／匯率：</strong>只列當日有明顯異動或與科技股相關的項目。</li>
     </ul>
   </section>
-
-  <section class="mb-section">
-    <h3>Yahoo 財經 AI 重點新聞</h3>
-    <ul>
-      <li>整理 Yahoo Finance / Yahoo 財經 AI 重點新聞與市場影響。</li>
-    </ul>
+  <section class="mb-section mb-events">
+    <h3>本日重點財經事項</h3>
+    <ol>
+      <li>
+        <strong>★★★★★ 具體事件標題（保留關鍵數字）</strong>
+        <p>一至兩句說清楚誰在何時做了什麼，以及已確認的關鍵細節。</p>
+        <p><strong>影響：</strong>說明對產業與具關聯公司的可能影響，以及今天要追蹤的確認點。 <a href="可靠來源網址" target="_blank" rel="noopener noreferrer">來源名稱</a></p>
+      </li>
+    </ol>
   </section>
-
-  <section class="mb-section">
-    <h3>今日觀察重點</h3>
+  <section class="mb-section mb-watchlist">
+    <h3>今日觀察</h3>
     <ul>
-      <li>列出今日需要觀察的市場重點。</li>
+      <li>列出 3 至 5 個今天可被驗證的追蹤事項，例如公司公告、政策細節、盤前價格、財報、法說或經濟數據。</li>
     </ul>
   </section>
 </article>
-""".strip()
 
+輸出前自行檢查：重點事項是否都是具體事件、是否依影響程度排序、是否保留重要數字、是否刪除重複與空泛句子、是否每則都有來源。
+""".strip()
 
 def generate_with_openai(model: str) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("Missing OPENAI_API_KEY. Put it in .env locally or GitHub Secrets.")
 
-    client = OpenAI(api_key=api_key, timeout=240.0)
+    client = OpenAI(
+      api_key=api_key,
+      timeout=600.0,
+      max_retries=2,
+    )
 
     response = client.responses.create(
         model=model,

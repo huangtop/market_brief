@@ -3,8 +3,9 @@ name: Generate Daily Market Brief
 on:
   schedule:
     # GitHub Actions cron uses UTC.
-    # Asia/Taipei 05:30 = UTC 21:30 on the previous day.
-    - cron: "30 21 * * *"
+    # UTC Mon-Fri 21:30 = Asia/Taipei Tue-Sat 05:30.
+    # Runs after each normal US trading session.
+    - cron: "30 21 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -24,15 +25,48 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install pandas_market_calendars
+
+      - name: Check whether NYSE traded today
+        id: market
+        run: |
+          python - <<'PY'
+          import os
+          import datetime as dt
+          from zoneinfo import ZoneInfo
+          import pandas_market_calendars as mcal
+
+          now_ny = dt.datetime.now(ZoneInfo("America/New_York"))
+          today = now_ny.date()
+
+          nyse = mcal.get_calendar("NYSE")
+          schedule = nyse.schedule(
+              start_date=today.isoformat(),
+              end_date=today.isoformat()
+          )
+
+          should_run = not schedule.empty
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"should_run={'true' if should_run else 'false'}\n")
+
+          if should_run:
+              print(f"NYSE traded on {today}. Generate brief.")
+          else:
+              print(f"NYSE closed on {today}. Skip OpenAI API call.")
+          PY
 
       - name: Generate latest market brief
+        if: steps.market.outputs.should_run == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-mini' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5-mini' }}
         run: python generate_brief.py
 
       - name: Commit generated HTML
+        if: steps.market.outputs.should_run == 'true'
         run: |
           git config user.name "market-brief-bot"
           git config user.email "market-brief-bot@users.noreply.github.com"

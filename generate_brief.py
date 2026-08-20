@@ -327,14 +327,30 @@ Power / Power Semiconductor
 
 是否有真正的同步異動。
 
-合格異常族群必須：
+合格異常訊號包括：
 
+1. 同方向族群異動
 - 至少2~4家代表公司同方向明顯異動；或
 - ETF / industry index / 可靠市場報導可同步確認。
 
-單一股票大漲大跌不能推論整個族群。
+2. 核心競爭者顯著反向異動
+- 同一六主線內的重要競爭者、替代供應商或同一 CSP 供應鏈公司，
+  若出現明顯相反方向的價格反應，也視為重大異常訊號。
+- 特別注意 customer win/loss、supplier diversification、
+  custom silicon deal、architecture change、長約、warrant、
+  採購轉移或供應份額改變。
+- 若單一核心公司漲跌約 ≥7%，或同產業兩家核心公司
+  相對表現差距約 ≥8~10 個百分點，優先檢查是否存在直接公司事件。
+- 例如 MRVL 明顯上漲而 AVGO 明顯下跌，
+  不得只歸因為「科技股 risk-off」；
+  必須優先判斷是否存在 Google / hyperscaler custom ASIC
+  supplier allocation 或競爭格局的新資訊。
 
-最多保留3個真正異常族群。
+單一股票大漲大跌仍不能直接推論整個族群，
+但若它是六主線核心公司且異動幅度顯著，
+可作為「公司事件 discovery trigger」。
+
+最多保留3個真正異常族群或重大競爭格局訊號。
 
 每個族群只需：
 
@@ -359,24 +375,51 @@ B｜高價值情報雷達
 
 用最多1次廣泛搜尋確認最近24~36小時是否有重大新資訊。
 
+【Freshness Hard Gate】
+
+B bucket 的主要 discovery window 固定為最近24~36小時。
+
+- 早於此區間的研究、報告或新聞，不得單獨進入「本日重點財經事項」。
+- 舊資料只能作背景。
+- 只有最近24~36小時出現新的價格反應、公司更新、供需變化或重大 follow-up 時，舊資料才可輔助解釋。
+- 不得因找到日期較舊的 TrendForce / SemiAnalysis / 券商報告，就視為完成今日情報 discovery。
+- 新舊資訊競爭版面時，優先保留最近24~36小時且直接改變六主線判斷的新事件。
+
 優先檢查：
 
 - Morgan Stanley / 大摩
 - Goldman Sachs / 高盛
 - Bloomberg
+- Reuters
 - TrendForce
 - SemiAnalysis
 - 鉅亨網
 
-也可使用 Reuters、CNBC、Yahoo Finance
-或其他可靠財經／產業媒體作 discovery。
-
-重要：
+也可使用 CNBC、Yahoo Finance 或其他可靠財經／產業媒體作 discovery。
 
 不要每個來源各自搜尋。
 
-一次搜尋的目的，是確認上述來源最近是否出現
-與六條主線直接相關的新訊號。
+一次搜尋的目的，是確認上述來源最近是否出現與六條主線直接相關的新訊號。
+
+【CSP / Neocloud Supplier-Change Priority】
+
+最近24~36小時若 Microsoft、Google/Alphabet、Amazon/AWS、Meta、Oracle
+或重要 Neocloud 出現以下任一新事件，自動視為至少 ★★★★☆ candidate，
+必須進行 Admission Test：
+
+- XPU / GPU / TPU 採購或自研架構變更
+- custom ASIC / custom silicon 合作
+- 新增或更換 ASIC / networking / memory / optical / power supplier
+- supplier diversification / allocation change
+- 長約、warrant、strategic agreement
+- 大額 AI infrastructure order
+- AI CapEx / data-center capacity / power capacity 明顯變更
+- 可能改變既有供應商份額或競爭格局的合作
+
+例如 Google 與 MRVL / AVGO 等 custom silicon 供應商之間
+若出現新合作、warrant、訂單或 supplier allocation 變化，
+屬於 ASIC / XPU 的高優先級 discovery，
+不得因當日整體科技股下跌而忽略。
 
 特別找：
 
@@ -390,6 +433,10 @@ B｜高價值情報雷達
 - CapEx
 - architecture
 - supplier allocation
+- supplier diversification
+- customer win / loss
+- custom silicon
+- warrant / strategic agreement
 - technology transition
 - competitive position
 
@@ -587,7 +634,11 @@ C. CSP / Neocloud 新資訊對六條主線
 D. 政策、出口管制、技術架構或供應鏈改變
    直接影響六條主線。
 
-E. 重大財報通過 Earnings Admission Test。
+E. CSP / Neocloud 的 supplier diversification、customer win/loss、
+   custom silicon deal、warrant、長約或 supplier allocation 改變，
+   足以影響 ASIC / XPU / Memory / CPO / Power 的競爭格局。
+
+F. 重大財報通過 Earnings Admission Test。
 
 以下不能單獨成為重點：
 
@@ -785,6 +836,10 @@ Discovery 已取得可靠來源，
 - 不描述哪些網站查不到。
 - 不描述搜尋次數或資料限制。
 - 不為版面湊數。
+- 禁止將篩選規則、Admission Test、搜尋策略、未納入原因、
+  「不湊數」「不以 earnings calendar 填空」等編輯判斷寫入最終報告。
+- 若某 section 沒有重大事件，只用自然、讀者可見的市場語言簡短表達，
+  不得暴露內部 prompt 或篩選流程。
 
 來源直接放在相關內容末尾。
 
@@ -858,7 +913,10 @@ Discovery 已取得可靠來源，
 - CSP / Neocloud 只作為 AI infrastructure demand signal。
 - Consumer / Edge AI 已排除。
 - 今日與未來財報沒有混淆。
-- 沒有輸出搜尋失敗或網站狀態。
+- B bucket 的本日重點沒有被24~36小時以前的舊研究取代。
+- 已檢查六主線核心競爭者是否存在顯著反向異動。
+- CSP / Neocloud 的 custom silicon、supplier allocation、warrant、長約與供應商多元化事件沒有被一般 risk-off 敘事掩蓋。
+- 沒有輸出搜尋失敗、網站狀態、Admission Test 或內部編輯規則。
 - 沒有重複同一事件。
 - 沒有湊數。
 - 五個 section 都存在。

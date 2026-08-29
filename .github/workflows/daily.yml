@@ -3,9 +3,10 @@ name: Generate Daily Market Brief
 on:
   schedule:
     # GitHub Actions cron uses UTC.
-    # UTC Mon-Fri 21:30 = Asia/Taipei Tue-Sat 05:30.
-    # Runs after each normal US trading session.
-    - cron: "30 21 * * 1-5"
+    # UTC 00:00 = Asia/Taipei 08:00.
+    # Tue-Sat 08:00 Taipei, after Mon-Fri US trading sessions.
+    - cron: "0 0 * * 2-6"
+
   workflow_dispatch:
 
 permissions:

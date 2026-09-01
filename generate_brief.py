@@ -234,22 +234,31 @@ A｜隔夜市場全景 + 資金輪動
 2. 同一供應鏈重要公司顯著反向異動，且有 customer win/loss、supplier allocation、custom silicon、architecture change 等直接原因。
 3. 單一核心公司約≥7%異動可作 discovery trigger，但不能直接推論整個族群。
 
-最多3個異常族群。一次搜尋無可靠訊號就寫「無明顯可確認異常族群」，不再追加搜尋。
+最多3個異常族群。無可靠訊號時只寫「無明顯可確認異常族群」，不得解釋原因或追加搜尋。
 
 ────────────────────
 B｜高價值情報
 ────────────────────
 
-用1次廣泛搜尋找「已發生資訊範圍」內首次公開或有實質新增資訊的六主線事件。
+用1次廣泛搜尋找「已發生資訊範圍」內首次公開或有實質新增資訊的六主線事件；同一次搜尋必須合併涵蓋：
 
-實質新增包括：guidance、訂單/合約、supplier/customer change、CapEx/capacity、ASP/pricing、inventory/utilization、architecture、監管/出口限制或正式公司說法。
+* Memory：HBM / DRAM / NAND / DDR5 的 pricing、capacity、allocation、qualification、長約或供應變化
+* XPU / Neocloud：GPU / TPU / accelerator 的大型訂單、cloud compute 合約、capacity、deployment 或 supplier change
+* ASIC / CSP：custom AI chip、custom silicon、NVLink / interconnect、hyperscaler 自研晶片、customer win/loss 或 architecture change
+* CPO / Optical：silicon photonics / photonics-SOI / CPO / 800G / 1.6T / transceiver / DSP / laser 的長約、capacity、pricing、量產或供應變化
+* MLCC / Power：AI server / rack 的 MLCC、PSU、BBU、HVDC、PMIC、MOSFET、SiC、GaN 之訂單、capacity、pricing 或供應變化
+* CSP / Neocloud：AI CapEx、GPU cloud contract、data-center / power capacity、長約、supplier / architecture change
+
+這是一次合併 discovery，不得拆成逐公司、逐產業或逐來源搜尋；同一搜尋找到的所有候選事件都要先做事件篩選，不得找到第一則後停止。
+
+實質新增包括：guidance、訂單/合約、投資或策略合作、supplier/customer change、CapEx/capacity、ASP/pricing、inventory/utilization、qualification/allocation、architecture、監管/出口限制或正式公司說法。
 
 換媒體重報、只補背景、無新事實 analyst commentary、單純延續前一日股價反應，都不算新事件。
 更早事件若只有價格驗證價值，只放「資金輪動」或「今日觀察」，不得重列「本日重點」。
 
 優先來源：公司 IR / 官方公告、政府、Reuters / Bloomberg、Morgan Stanley / Goldman Sachs 公開轉述、TrendForce、SemiAnalysis、鉅亨網及其他可靠財經媒體。不要逐來源搜尋。
 
-大型 CSP / Neocloud 若出現 XPU / custom silicon、supplier change、長約、AI CapEx、data-center / power capacity 重大變更，必須進事件篩選。
+大型 CSP / Neocloud 若出現 GPU / XPU 大型雲端運算合約、custom silicon、supplier change、長約、AI CapEx、data-center / power capacity 重大變更，必須進事件篩選。
 
 ────────────────────
 C｜重大財報結果 + 未來財報
@@ -258,7 +267,7 @@ C｜重大財報結果 + 未來財報
 用1次搜尋同時完成：
 
 1. 找「已發生資訊範圍」內已公布且對六主線重要的財報實際結果。
-2. 找今天至未來3天尚未公布的重要財報。
+2. 找今天至未來3天已排定、尚未公布且符合下列條件的重要財報；必須從財報日程辨識候選，不得因一般搜尋未出現就判定沒有。
 
 已公布財報優先寫 Revenue/EPS、guidance、CapEx、orders、capacity、AI data-center / XPU / ASIC / memory / optical / power commentary。
 不得用 earnings calendar、preview 或 conference-call 預告代替已公布結果。
@@ -307,8 +316,8 @@ F. 重大財報通過上述條件。
 今日觀察
 ────────────────────
 
-只寫今天可驗證的具體條件，例如「若 X 發生，確認 Y 是否同步出現」。
-禁止空泛的市場情緒、AI股、期貨、殖利率、成交量觀察。沒有就少寫。
+只寫由今日已知事件、隔夜異動或未來催化劑衍生的可驗證條件，例如「若 X 發生，確認 Y 是否同步出現」。
+不得憑空假設某公司今天可能發布消息。沒有具體條件就少寫。
 
 ────────────────────
 來源與輸出
@@ -320,7 +329,7 @@ F. 重大財報通過上述條件。
 
 使用繁中、短句、高資訊密度；先事實，再影響。
 不給買賣建議，不預測必然漲跌。
-不輸出 Markdown、code fence、搜尋流程、資料限制、內部編輯語言或未納入原因。
+不輸出 Markdown、code fence、搜尋流程、資料限制或內部編輯語言。不得寫「時區換算」「資訊範圍內」「未發現」「無確認之」「若有變動將更新」等搜尋/編輯語氣。
 section 無重大內容時用自然市場語言簡短表達。
 直接輸出可嵌入 WordPress 的 HTML；不要輸出 <html>、<head>、<body>，不要使用表格。
 

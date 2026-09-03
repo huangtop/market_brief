@@ -167,16 +167,15 @@ def offline_sample_html() -> str:
 </article>'''
 
 
-def build_prompt() -> str:
+def build_prompt(market_session_date: str) -> str:
     now = taipei_now()
-    prior_session_start = now - dt.timedelta(hours=36)
     earnings_end = (now + dt.timedelta(days=3)).date()
 
     return f"""
 你是科技基金晨會的資深市場編輯。這是無人值守排程，不是對話。
 
 現在台北時間：{now.strftime('%Y/%m/%d %H:%M')}
-先換算目前美東時間。已發生資訊範圍＝最近一個美股交易日前一日收盤後至現在。
+已發生資訊範圍＝{market_session_date} 前一個美股交易日收盤後至現在。
 已公布財報必須找實際 results / guidance；尚未公布才列未來催化劑。
 事件 freshness 以實際發生／公告時間判斷，不以新聞刊登日期判斷。
 更早事件只能作背景；若沒有新 fundamental fact，不得重列「本日重點」。
@@ -199,8 +198,19 @@ def build_prompt() -> str:
 【最高原則】
 
 Coverage ≠ Output。只寫真正改變市場或產業判斷的事件；沒有就少寫，不湊數。
-隔夜行情只能使用最近一個完整交易日的實際價格；更早行情不得冒充昨夜行情。
 分析只做一步直接影響，不做多層推測。
+
+【交易日鎖定】
+
+本次「昨夜美股」唯一允許使用的完整交易日：{market_session_date}
+
+所有美股指數、個股、ETF、產業與科技資金輪動的「昨夜漲跌」，
+都必須屬於 {market_session_date}。
+
+不得自行改用其他交易日。
+不得把 {market_session_date} 之前的行情寫成「昨夜」。
+如果搜尋結果無法確認行情日期等於 {market_session_date}，
+不得把該數字當成資金輪動證據。
 
 ────────────────────
 搜尋預算
@@ -208,7 +218,7 @@ Coverage ≠ Output。只寫真正改變市場或產業判斷的事件；沒有�
 
 整份最多4次 web search，正常3次完成。
 
-A. 最多1次：最近完整交易日市場全景 + 六主線市場異動。
+A. 最多1次：{market_session_date} 市場全景 + 六主線市場異動。
 B. 最多1次：已發生資訊範圍內六主線重大新消息。
 C. 最多1次：已公布重大財報結果 + 今天至未來3天重大財報。
 D. 最多1次：只補查一個已找到但資訊不足的 ★★★★★ 事件或重大財報。
@@ -219,7 +229,7 @@ D. 最多1次：只補查一個已找到但資訊不足的 ★★★★★ 事�
 A｜隔夜市場全景 + 資金輪動
 ────────────────────
 
-用1次廣泛搜尋確認最近一個完整美股交易日及最新完整台股交易日。
+用1次廣泛搜尋確認 {market_session_date} 美股行情及最新完整台股交易日。
 
 「隔夜市場速覽」最多3~5則，只寫真正影響定價的：
 
@@ -230,11 +240,14 @@ A｜隔夜市場全景 + 資金輪動
 
 「昨夜科技資金輪動」只判斷六條主線。合格訊號：
 
+用於資金輪動的個股漲跌，必須確認屬於 {market_session_date}；無法確認日期就忽略該個股漲跌。
+不可使用新聞文章中描述「昨日、前日、週一」但日期不明的數字，除非能明確對應 {market_session_date}。
+
 1. 至少2~4家代表公司同方向明顯異動，或 ETF / industry index / 可靠報導同步確認。
 2. 同一供應鏈重要公司顯著反向異動，且有 customer win/loss、supplier allocation、custom silicon、architecture change 等直接原因。
 3. 單一核心公司約≥7%異動可作 discovery trigger，但不能直接推論整個族群。
 
-最多3個異常族群。無可靠訊號時只寫「無明顯可確認異常族群」，不得解釋原因或追加搜尋。
+最多3個異常族群。若沒有足夠的 {market_session_date} 同日價格證據，只寫「無明顯可確認異常族群」，不得硬湊故事、解釋原因或追加搜尋。
 
 ────────────────────
 B｜高價值情報
@@ -369,7 +382,7 @@ section 無重大內容時用自然市場語言簡短表達。
 
 最後自行確認：
 
-* 行情是最近完整交易日，不是前一日。
+* 所有昨夜行情均明確屬於 {market_session_date}，沒有混入更早交易日。
 * 已公布重大財報寫的是實際結果。
 * 本日重點沒有重播舊事件。
 * CSP / Neocloud 重大 supplier/custom silicon/CapEx 變化沒有漏掉。
@@ -378,7 +391,7 @@ section 無重大內容時用自然市場語言簡短表達。
 """.strip()
 
 
-def generate_with_openai(model: str) -> str:
+def generate_with_openai(model: str, market_session_date: str) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError(
@@ -414,7 +427,7 @@ def generate_with_openai(model: str) -> str:
                 "content": [
                     {
                         "type": "input_text",
-                        "text": build_prompt(),
+                        "text": build_prompt(market_session_date),
                     }
                 ],
             },
@@ -475,7 +488,22 @@ def main() -> int:
         write_outputs(content)
         return 0
 
-    content = generate_with_openai(model)
+    market_session_date = os.getenv("MARKET_SESSION_DATE", "").strip()
+    if not market_session_date:
+        raise RuntimeError(
+            "Missing MARKET_SESSION_DATE. A formal run must receive the confirmed "
+            "closed NYSE session date from the workflow."
+        )
+    try:
+        parsed_market_date = dt.date.fromisoformat(market_session_date)
+    except ValueError as exc:
+        raise RuntimeError(
+            "MARKET_SESSION_DATE must use YYYY-MM-DD format."
+        ) from exc
+    if parsed_market_date.isoformat() != market_session_date:
+        raise RuntimeError("MARKET_SESSION_DATE must use YYYY-MM-DD format.")
+
+    content = generate_with_openai(model, market_session_date)
     write_outputs(content)
     return 0
 

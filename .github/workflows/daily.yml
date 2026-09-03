@@ -30,7 +30,7 @@ jobs:
           pip install -r requirements.txt
           pip install pandas_market_calendars
 
-      - name: Check whether NYSE traded today
+      - name: Check whether today's NYSE session has closed
         id: market
         run: |
           python - <<'PY'
@@ -39,24 +39,51 @@ jobs:
           from zoneinfo import ZoneInfo
           import pandas_market_calendars as mcal
 
-          now_ny = dt.datetime.now(ZoneInfo("America/New_York"))
-          today = now_ny.date()
+          now_utc = dt.datetime.now(dt.timezone.utc)
+          now_ny = now_utc.astimezone(ZoneInfo("America/New_York"))
+          ny_date = now_ny.date()
 
           nyse = mcal.get_calendar("NYSE")
           schedule = nyse.schedule(
-              start_date=today.isoformat(),
-              end_date=today.isoformat()
+              start_date=ny_date.isoformat(),
+              end_date=ny_date.isoformat()
           )
 
-          should_run = not schedule.empty
+          market_date = ""
+          should_run = False
+
+          if schedule.empty:
+              reason = f"NYSE has no session on {ny_date}."
+          else:
+              session_date = schedule.index[0].date()
+              market_close = schedule.iloc[0]["market_close"].to_pydatetime()
+              if market_close.tzinfo is None:
+                  market_close = market_close.replace(tzinfo=dt.timezone.utc)
+              else:
+                  market_close = market_close.astimezone(dt.timezone.utc)
+
+              if market_close <= now_utc:
+                  should_run = True
+                  market_date = session_date.isoformat()
+                  reason = (
+                      f"NYSE session {market_date} closed at "
+                      f"{market_close.isoformat()}."
+                  )
+              else:
+                  reason = (
+                      f"NYSE session {session_date} is not closed yet; "
+                      f"market_close={market_close.isoformat()}, "
+                      f"now_utc={now_utc.isoformat()}."
+                  )
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"should_run={'true' if should_run else 'false'}\n")
+              f.write(f"market_date={market_date}\n")
 
           if should_run:
-              print(f"NYSE traded on {today}. Generate brief.")
+              print(f"{reason} Generate brief.")
           else:
-              print(f"NYSE closed on {today}. Skip OpenAI API call.")
+              print(f"{reason} Skip OpenAI API call.")
           PY
 
       - name: Generate latest market brief
@@ -64,6 +91,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5-mini' }}
+          MARKET_SESSION_DATE: ${{ steps.market.outputs.market_date }}
         run: python generate_brief.py
 
       - name: Commit generated HTML
